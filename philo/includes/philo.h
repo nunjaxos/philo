@@ -6,7 +6,7 @@
 /*   By: abhmidat <abhmidat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/20 20:54:59 by abhmidat          #+#    #+#             */
-/*   Updated: 2025/04/25 21:13:56 by abhmidat         ###   ########.fr       */
+/*   Updated: 2025/04/25 21:36:22 by abhmidat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 # include <unistd.h>
 # include <stdlib.h>
 # include <time.h>
+#include <sys/time.h>
 
 typedef enum	e_state
 {
@@ -67,5 +68,21 @@ int     num_check(t_data *data);
 int     is_alpha(char c);
 static long     atol_norm(const char *str, size_t r, long s, long *i);
 long    ft_atol(const char *str);
-
+void	free_all(t_data *data);
+		//inits
+int		init_forks(t_data *data);
+void	init_one_philo(t_philo *philo, int i, t_data *data);
+int		init_philos(t_data *data);
+void	join_philo_threads(t_data *data);
+int		start_simulation(t_data *data);
+		//monitor
+int		simulation_should_stop(t_data *data);
+void	stop_simulation(t_data *data);
+int		all_philos_ate_enough(t_data *data);
+int		check_philos_status(t_data *data);
+void	*monitor_routine(void *arg);
+		//philo_funcs
+void	*philo_routine(void *arg);
+void	print_state(t_philo *philo, t_state state);
+long	get_timestamp(void);
 #endif
