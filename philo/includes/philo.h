@@ -6,7 +6,7 @@
 /*   By: abhmidat <abhmidat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/20 20:54:59 by abhmidat          #+#    #+#             */
-/*   Updated: 2025/04/20 20:55:00 by abhmidat         ###   ########.fr       */
+/*   Updated: 2025/04/25 21:13:56 by abhmidat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,9 @@ typedef struct	s_data
 	pthread_mutex_t	*forks;
 	pthread_mutex_t	print_lock;
 	pthread_mutex_t	data_lock;
+	int	simulation_running;
+	pthread_mutex_t	simulation_lock;
+
 }		t_data;
 
 		//parisng

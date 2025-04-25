@@ -6,7 +6,7 @@
 /*   By: abhmidat <abhmidat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/20 20:54:54 by abhmidat          #+#    #+#             */
-/*   Updated: 2025/04/25 18:56:55 by abhmidat         ###   ########.fr       */
+/*   Updated: 2025/04/25 21:08:24 by abhmidat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,4 +53,20 @@ long    ft_atol(const char *str)
                 i++;
         }
         return (atol_norm(str, r, s, &i));
+}
+
+void	free_all(t_data *data)
+{
+	int	i;
+
+	i = 0;
+	while (i < data->nb_philo)
+	{
+		pthread_mutex_destroy(&data->forks[i]);
+		pthread_mutex_destroy(&data->philos[i].state_lock);
+		i++;
+	}
+	pthread_mutex_destroy(&data->print_lock);
+	free(data->forks);
+	free(data->philos);
 }
