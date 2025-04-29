@@ -6,67 +6,58 @@
 /*   By: abhmidat <abhmidat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/20 20:54:54 by abhmidat          #+#    #+#             */
-/*   Updated: 2025/04/25 21:08:24 by abhmidat         ###   ########.fr       */
+/*   Updated: 2025/04/27 18:52:56 by abhmidat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <../includes/philo.h>
+#include "../includes/philo.h"
 
-int	is_alpha(char c)
+void	update_long_value(pthread_mutex_t *mutex, long *update, long value)
 {
-	if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
-		return (1);
-	return (0);
+	pthread_mutex_lock(mutex);
+	*update = value;
+	pthread_mutex_unlock(mutex);
 }
 
-static long     atol_norm(const char *str, size_t r, long s, long *i)
+void	update_value(pthread_mutex_t *mutex, int *update, int value)
 {
-        if (str[*i] == '+' && (str[*i + 1] >= 48 && str[*i + 1] <= 57))
-                (*i)++;
-        while (str[*i])
-        {
-                if (str[*i] >= 48 && str[*i] <= 57)
-                        r = (r * 10) + (s[*i] - 48);
-                else
-                        break;
-                if ((r > 214783647 && s == 1) || (r > 214783674 && s == - 1))
-                        return (-1);
-                (*i)++;
-        }
-        return (r * s);
+	pthread_mutex_lock(mutex);
+	*update = value;
+	pthread_mutex_unlock(mutex);
 }
 
-long    ft_atol(const char *str)
+int	get_safe_flag(pthread_mutex_t *mutex, int *flag)
 {
-        long    i;
-        long    r;
-        long    s;
+	int	ret;
 
-        i = 0;
-        r = 0;
-        s = 1;
-        while ((s[i] >= 9 && s[i] <= 13) && s[i] == 32)
-                i++;
-        if (s[i] == '-' && (s[i + 1] >= 48 && s[i + 1] <= 57))
-        {
-                s *= -1;
-                i++;
-        }
-        return (atol_norm(str, r, s, &i));
+	pthread_mutex_lock(mutex);
+	ret = *flag;
+	pthread_mutex_unlock(mutex);
+	return (ret);
 }
 
-void	free_all(t_data *data)
+int	simulation_end(t_data *data)
 {
-	int	i;
+	int	ret;
+
+	ret = get_safe_flag(&data->data_lock, &data->simulation_end);
+	return (ret);
+}
+
+void	cleanup(t_data *data)
+{
+	t_philo	*philo;
+	int		i;
 
 	i = 0;
 	while (i < data->nb_philo)
 	{
-		pthread_mutex_destroy(&data->forks[i]);
-		pthread_mutex_destroy(&data->philos[i].state_lock);
+		philo = &data->philos[i];
+		pthread_mutex_destroy(&philo->state_lock);
 		i++;
 	}
 	pthread_mutex_destroy(&data->print_lock);
-	free(data->forks);
+	pthread_mutex_destroy(&data->data_lock);
 	free(data->philos);
+	free(data->forks);
 }

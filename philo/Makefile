@@ -1,24 +1,30 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -Werror -pthread -I./includes
 NAME = philo
-SRC = src/main.c src/init.c src/monitor.c src/parsing.c src/philo_funcs.c src/threads.c src/utils.c
-OBJ = $(SRC:.c=.o)
 
-$(NAME): $(OBJ)
-	$(CC) $(OBJ) -o $(NAME)
+SRC = srcs/parsing.c srcs/utils.c srcs/philo.c srcs/philo_funcs.c \
+	  srcs/init.c srcs/more_utils.c srcs/threads.c srcs/utils3.c \
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+OBG = $(SRC:.c=.o)
+
+CC = cc
+
+CFLAGS = -Wall -Wextra -Werror -g3 #-fsanitize=thread -g3 -pthread
+
+all	:	$(NAME)
+
+$(NAME) : $(OBG)
+		$(CC) $(CFLAGS) $(OBG) -o $(NAME)
+
+%.o	 : %.c
+		$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJ)
+	rm -rf $(OBG)
 
-fclean: clean
-	rm -f $(NAME)
+fclean:
+	rm -rf $(OBG) $(NAME)
 
-re: fclean $(NAME)
+re: fclean all
 
-test: $(NAME)
-	./$(NAME)
+.PHONY: all clean fclean re
 
-all: $(NAME)
+.SECONDARY: $(OBG)

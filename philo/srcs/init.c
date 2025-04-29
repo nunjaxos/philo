@@ -6,56 +6,67 @@
 /*   By: abhmidat <abhmidat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/25 18:27:50 by abhmidat          #+#    #+#             */
-/*   Updated: 2025/04/25 21:34:10 by abhmidat         ###   ########.fr       */
+/*   Updated: 2025/04/27 18:52:01 by abhmidat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/philo.h"
 
-int	init_forks(t_data *data)
+static void	init_mutex(t_philo *philo, pthread_mutex_t *forks, int i)
 {
-	int	i;
+	int	nb;
 
-	data->forks = malloc(sizeof(pthread_mutex_t) * data->nb_philo);
-	if (!data->forks)
-		return (1);
-	i = 0;
-	while (i < data->nb_philo)
+	nb = philo->data->nb_philo;
+	philo->fork1_mutex = &forks[(i + 1) % nb];
+	philo->fork2_mutex = &forks[i];
+	if (i % 2 == 0)
 	{
-		if (pthread_mutex_init(&data->forks[i], NULL) != 0)
-			return (1);
-		i++;
+		philo->fork1_mutex = &forks[i];
+		philo->fork2_mutex = &forks[(i + 1) % nb];
 	}
-	return (0);
 }
 
-void	init_one_philo(t_philo *philo, int i, t_data *data)
-{
-	philo->pos = i;
-	philo->meals_count = 0;
-	philo->flag = 0;
-	philo->data = data;
-	philo->last_meal = 0;
-	pthread_mutex_init(&philo->state_lock, NULL);
-	philo->fork1_mutex = &data->forks[i];
-	philo->fork2_mutex = &data->forks[(i + 1) % data->nb_philo];
-}
-
-int	init_philos(t_data *data)
+static void	ft_philo_init(t_data *data)
 {
 	int	i;
 
-	if (init_forks(data))
-		return (1);
+	i = -1;
+	while (++i < data->nb_philo)
+	{
+		data->philos[i].meals_count = 0;
+		data->philos[i].pos = i + 1;
+		data->philos[i].flag = 0;
+		data->philos[i].data = data;
+		pthread_mutex_init(&data->philos[i].state_lock, NULL);
+		init_mutex(&data->philos[i], data->forks, i);
+	}
+}
+
+int	init(t_data *data)
+{
+	int	i;
+
+	i = -1;
+	data->simulation_end = 0;
+	data->thread_flag = 0;
+	data->thread_active = 0;
 	data->philos = malloc(sizeof(t_philo) * data->nb_philo);
 	if (!data->philos)
 		return (1);
-	i = 0;
-	while (i < data->nb_philo)
+	data->forks = malloc(sizeof(pthread_mutex_t) * data->nb_philo);
+	if (!data->forks)
 	{
-		init_one_philo(&data->philos[i], i, data);
-		i++;
+		free(data->philos);
+		return (1);
 	}
+	while (++i < data->nb_philo)
+	{
+		if (pthread_mutex_init(&data->forks[i], NULL))
+			return (free(data->philos), free(data->forks), 1);
+	}
+	if (pthread_mutex_init(&data->data_lock, NULL)
+		|| pthread_mutex_init(&data->print_lock, NULL))
+		return (free(data->philos), free(data->forks), 1);
+	ft_philo_init(data);
 	return (0);
 }
-

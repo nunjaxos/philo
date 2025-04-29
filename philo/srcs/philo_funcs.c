@@ -6,66 +6,86 @@
 /*   By: abhmidat <abhmidat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/20 20:54:46 by abhmidat          #+#    #+#             */
-/*   Updated: 2025/04/25 18:56:46 by abhmidat         ###   ########.fr       */
+/*   Updated: 2025/04/27 18:52:39 by abhmidat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/philo.h"
 
-void	*philo_routine(void *arg)
+void	*one_philo_routine(void *arg)
 {
 	t_philo	*philo;
 
 	philo = (t_philo *)arg;
-	if (philo->pos % 2)
+	while (!get_safe_flag(&philo->data->data_lock, &philo->data->thread_flag))
+		;
+	update_long_value(&philo->state_lock, &philo->last_meal, get_time());
+	increment_value(&philo->data->data_lock, &philo->data->thread_active);
+	print_state(philo, FORK1);
+	while (!simulation_end(philo->data))
 		usleep(100);
-	while (1)
-	{
-		print_state(philo, THINKING);
-		pthread_mutex_lock(philo->fork1_mutex);
-		print_state(philo, FORK1);
-		pthread_mutex_lock(philo->fork2_mutex);
-		print_state(philo, FORK2);
-		pthread_mutex_lock(&philo->state_lock);
-		philo->last_meal = get_timestamp();
-		pthread_mutex_unlock(&philo->state_lock);
-		print_state(philo, EATING);
-		usleep(philo->data->time_to_eat * 1000);
-		philo->meals_count++;
-		pthread_mutex_unlock(philo->fork2_mutex);
-		pthread_mutex_unlock(philo->fork1_mutex);
-		print_state(philo, SLEEPING);
-		usleep(philo->data->time_to_sleep * 1000);
-	}
 	return (NULL);
 }
 
 void	print_state(t_philo *philo, t_state state)
 {
-	long	current_time;
-
+	if (get_safe_flag(&philo->state_lock, &philo->flag))
+		return ;
 	pthread_mutex_lock(&philo->data->print_lock);
-	current_time = get_timestamp();
-	if (state == THINKING)
-		printf("%ld %d is thinking;)\n", current_time, philo->pos);
-	else if (state == FORK1)
-		printf("%ld %d has taken a fork:)\n", current_time, philo->pos);
-	else if (state == FORK2)
-		printf("%ld %d has taken a fork:)\n", current_time, philo->pos);
-	else if (state == EATING)
-		printf("%ld %d is eating:)\n", current_time, philo->pos);
-	else if (state == SLEEPING)
-		printf("%ld %d is sleeping:|\n", current_time, philo->pos);
+	if ((state == FORK1 || state == FORK2)
+		&& !(get_safe_flag(&philo->data->data_lock,
+				&philo->data->simulation_end)))
+		printf("%ld %d has taken a fork\n", get_time()
+			- philo->data->start_time, philo->pos);
+	else if (state == EATING && !(get_safe_flag(&philo->data->data_lock,
+				&philo->data->simulation_end)))
+		printf("%ld %d is eating\n", get_time() - philo->data->start_time,
+			philo->pos);
+	else if (state == SLEEPING && !(get_safe_flag(&philo->data->data_lock,
+				&philo->data->simulation_end)))
+		printf("%ld %d is sleeping\n", get_time() - philo->data->start_time,
+			philo->pos);
+	else if (state == THINKING && !(get_safe_flag(&philo->data->data_lock,
+				&philo->data->simulation_end)))
+		printf("%ld %d is thinking\n", get_time() - philo->data->start_time,
+			philo->pos);
 	else if (state == DEAD)
-		printf("%ld %d is dead:x\n", current_time, philo->pos);
-
+		printf("%ld %d died\n", get_time() - philo->data->start_time,
+			philo->pos);
 	pthread_mutex_unlock(&philo->data->print_lock);
 }
 
-long	get_timestamp(void)
+void	philo_eat(t_philo *philo)
 {
-	struct timeval	time;
+	pthread_mutex_lock(philo->fork1_mutex);
+	print_state(philo, FORK1);
+	pthread_mutex_lock(philo->fork2_mutex);
+	print_state(philo, FORK2);
+	update_long_value(&philo->state_lock, &philo->last_meal, get_time());
+	philo->meals_count++;
+	print_state(philo, EATING);
+	ft_sleep(philo->data, philo->data->time_to_eat);
+	if (philo->data->max_meals != -1
+		&& philo->meals_count == philo->data->max_meals)
+		update_value(&philo->state_lock, &philo->flag, 1);
+	pthread_mutex_unlock(philo->fork1_mutex);
+	pthread_mutex_unlock(philo->fork2_mutex);
+}
 
-	gettimeofday(&time, NULL);
-	return ((time.tv_sec * 1000) + (time.tv_usec / 1000));
+void	philo_think(t_philo *philo, int flag)
+{
+	long	time_to_sleep;
+	long	time_to_eat;
+	long	time_to_think;
+
+	if (!flag)
+		print_state(philo, THINKING);
+	if (!(philo->data->nb_philo % 2))
+		return ;
+	time_to_sleep = philo->data->time_to_sleep;
+	time_to_eat = philo->data->time_to_eat;
+	time_to_think = time_to_eat * 2 - time_to_sleep;
+	if (time_to_think < 0)
+		time_to_think = 0;
+	ft_sleep(philo->data, time_to_think * 0.1);
 }
